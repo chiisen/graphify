@@ -205,6 +205,20 @@ graphify codex install     # 安裝鉤子 (指令為 $graphify)
 python3 -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"
 ```
 
+> Windows + Codex 常見問題（cp950 編碼）
+>
+> 若在 Windows PowerShell 看到 `Rebuild failed: 'cp950' codec can't encode character ...`，先切換 UTF-8 再執行重建：
+>
+> ```powershell
+> chcp 65001
+> $env:PYTHONUTF8 = "1"
+> $env:PYTHONIOENCODING = "utf-8"
+> [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+> python -X utf8 -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"
+> ```
+>
+> 若使用 `python3`，將最後一行改為 `python3 -X utf8 ...`。
+
 ### Cursor
 
 ```bash
@@ -330,3 +344,4 @@ A: 搭配 `--update` 增量模式或 `--watch` 背景同步，僅處理變更檔
 ---
 
 *最後更新: 2026-04-10*
+
