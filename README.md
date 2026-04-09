@@ -155,10 +155,44 @@ graphify claude install    # 啟用 Always-on 模式
 graphify claude disable    # 停用
 ```
 
+`/graphify` 是一個 **Skill** 的 Claude Code 擴展，將完整 9 步知識圖譜流程自動化為單一指令。
+
+**Available commands in Claude Code / 在 Claude Code 中可用的指令：**
+
+```bash
+/graphify .                      # Full analysis of current directory / 完整分析當前目錄
+/graphify . --update             # Incremental update (only changed files) / 增量更新（只分析改變的檔案）
+/graphify . --update --mode deep # Deep semantic extraction / 深度語義提取
+```
+
+**How it works / 運作方式：**
+
+1. **Automatic installation / 自動安裝**：首次使用時，Skill 會自動下載到 `~/.claude/skills/graphify/`。
+2. **One-command pipeline / 單一命令流程**：執行完整 9 步（detection、extraction、clustering、visualization）。
+3. **AI-friendly / AI 友善**：適合 Agent 在程式碼變更後快速刷新架構理解。
+
+**Direct command alternative (not recommended for Claude Code) / 直接命令方式（Claude Code 中不建議）：**
+
+```bash
+python -m graphify . --mode deep
+```
+
+建議在 Claude Code 中優先使用 `/graphify` 以取得最佳體驗。
+
 ### Codex CLI
 
 ```bash
 graphify codex install     # 安裝鉤子 (指令為 $graphify)
+```
+
+#### Codex 專案規則（graphify）
+
+- 回答架構或程式碼問題前，先讀取 `graphify-out/GRAPH_REPORT.md`（了解 god nodes 與社群結構）。
+- 若存在 `graphify-out/wiki/index.md`，優先走 Wiki 導覽，不直接掃描原始檔。
+- 本次會話若有修改程式碼檔，完成後執行以下指令同步圖譜：
+
+```bash
+python3 -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"
 ```
 
 ### Cursor
