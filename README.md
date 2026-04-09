@@ -148,6 +148,16 @@ graphify-out/
 
 ## 🔌 AI 平台整合
 
+### 平台支援矩陣
+
+| 平台 | 狀態 | 指令 |
+|------|------|------|
+| Claude Code | ✅ 已支援 | `graphify claude install` |
+| Codex CLI | ✅ 已支援 | `graphify codex install` |
+| Cursor | ✅ 已支援 | `graphify cursor install` |
+| Gemini CLI | ✅ 已支援 | `graphify gemini install` |
+| Qwen | 🚧 規劃中 | （尚未提供 `graphify qwen install`） |
+| Opencode | 🚧 規劃中 | （尚未提供 `graphify opencode install`） |
 ### Claude Code
 
 ```bash
