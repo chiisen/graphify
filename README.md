@@ -95,6 +95,17 @@ pip install graphifyy
 graphify install
 ```
 
+`graphify install` 執行結果(自動更新 CLAUDE.md 與 skill)：
+```bash
+graphify install                                                                                         ✔  took 5s  at 09:30:27 
+  skill installed  ->  /Users/liao-eli/.claude/skills/graphify/SKILL.md
+  CLAUDE.md        ->  skill registered in /Users/liao-eli/.claude/CLAUDE.md
+
+Done. Open your AI coding assistant and type:
+
+  /graphify .
+```
+
 ### 基本使用
 
 ```bash
