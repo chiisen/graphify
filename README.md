@@ -205,6 +205,15 @@ python -m graphify . --mode deep
 ```bash
 graphify codex install     # 安裝鉤子 (指令為 $graphify)
 ```
+`graphify codex install` 執行結果(自動更新 AGENTS.md 與 hook)：
+```bash
+graphify codex install                                                                                            ✔  at 09:30:30 
+graphify already configured in AGENTS.md
+  .codex/hooks.json  ->  hook already registered (no change)
+
+Codex will now check the knowledge graph before answering
+codebase questions and rebuild it after code changes.
+```
 
 #### Codex 專案規則（graphify）
 
