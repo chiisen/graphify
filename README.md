@@ -9,7 +9,9 @@
 
 ## 📖 專案簡介
 
-Graphify 是一款 **AI 編碼助手技能插件**，能讀取任意資料夾（程式碼、文件、PDF、圖片、截圖、筆記等），自動構建可查詢的「知識圖譜（Knowledge Graph）」。
+Graphify 是一款 **AI 編碼助手技能插件**。在 Claude Code、Codex、OpenCode、Trae 或 Cursor 中輸入 `/graphify`，它能讀取任意資料夾（程式碼、文件、PDF、圖片、截圖、筆記等），自動構建可查詢的「知識圖譜（Knowledge Graph）」。
+
+> **"Andrej Karpathy 會維護一個 `/raw` 資料夾，把論文、推文、截圖和筆記都丟進去。Graphify 就是在解決這類問題 —— 相比直接讀取原始檔案，每次查詢的 Token 消耗可降低 71.5 倍，結果還能跨會話持久保存。"**
 
 ### 它能解決什麼問題？
 
@@ -61,6 +63,13 @@ Graphify: 查詢知識圖譜    → 僅返回相關節點
 
 實測 Token 消耗減少約 **71.5 倍**，搭配 SHA256 快取，僅增量處理變更檔案。
 
+### 🔮 你會得到什麼 (進階洞察)
+
+- **超邊 (Hyperedges)**：用來表達 3 個以上節點的群組關係。例如：一組類別共同實現一個協議、認證鏈路裡的一組函數。
+- **置信度分數 (Confidence Score)**：每條 `INFERRED` 邊都有 `0.0-1.0` 的評分。你不只知道哪些是猜出來的，還知道 AI 有多大把握。
+- **語義相似邊**：即使結構上沒有直接依賴，也能建立關聯。例如：兩個函數實作了相同的演算法概念。
+- **「為什麼」 (Rationale)**：自動提取 `# WHY:`、`# NOTE:`、`# HACK:` 等註解，讓你理解設計動機。
+
 ### 🔗 AI 助手深度整合 (Always-on)
 
 支援以下平台自動注入圖譜規則：
@@ -88,12 +97,14 @@ Graphify: 查詢知識圖譜    → 僅返回相關節點
 ### 安裝
 
 ```bash
-# ⚠️ PyPI 套件名為 graphifyy (多一個 y，避免名稱衝突)
+# ⚠️ 要求 Python 3.10+
 pip install graphifyy
 
 # 初始化環境
 graphify install
 ```
+
+> **PyPI 包目前名為 `graphifyy` (多一個 y)**，因為 `graphify` 名稱正在回收中。CLI 命令仍為 `graphify`。
 
 `graphify install` 執行結果(自動更新 CLAUDE.md 與 skill)：
 ```bash
@@ -130,6 +141,10 @@ graphify path "DigestAuth" "Response"
 
 # 解釋特定節點的含義與關聯
 graphify explain "SwinTransformer"
+
+# 拉取外部資源並更新圖譜
+graphify add https://arxiv.org/abs/1706.03762
+graphify add https://x.com/karpathy/status/...
 ```
 
 ### 啟動 MCP 伺服器
@@ -161,14 +176,19 @@ graphify-out/
 
 ### 平台支援矩陣
 
-| 平台 | 狀態 | 指令 |
+| 平台 | 狀態 | 安裝指令 |
 |------|------|------|
-| Claude Code | ✅ 已支援 | `graphify claude install` |
-| Codex CLI | ✅ 已支援 | `graphify codex install` |
+| Claude Code | ✅ 已支援 | `graphify install --platform claude` |
+| Codex CLI | ✅ 已支援 | `graphify install --platform codex` |
+| Trae | ✅ 已支援 | `graphify install --platform trae` |
+| Trae CN | ✅ 已支援 | `graphify install --platform trae-cn` |
+| Opencode | ✅ 已支援 | `graphify install --platform opencode` |
+| OpenClaw | ✅ 已支援 | `graphify install --platform claw` |
+| Factory Droid | ✅ 已支援 | `graphify install --platform droid` |
 | Cursor | ✅ 已支援 | `graphify cursor install` |
 | Gemini CLI | ✅ 已支援 | `graphify gemini install` |
-| Qwen | ✅ 已支援 | 方案 C：使用 `AGENTS.md`（見下方說明） |
-| Opencode | ✅ 已支援 | `graphify opencode install` |
+
+> **Codex 用戶注意**：需要在 `~/.codex/config.toml` 的 `[features]` 下開啟 `multi_agent = true` 以支援並行提取。
 
 ### Opencode 整合方案
 
@@ -483,6 +503,18 @@ graphify gemini install    # 生成對應規則
 
 ---
 
+## 📈 實測案例 (Worked Examples)
+
+| 語料規模 | 檔案數 | Token 壓縮比 | 範例輸出 |
+|------|--------|--------|------|
+| Karpathy 倉庫 + 5 篇論文 + 4 張圖片 | 52 | **71.5x** | `worked/karpathy-repos/` |
+| graphify 源碼 + Transformer 論文 | 4 | **5.4x** | `worked/mixed-corpus/` |
+| httpx (合成 Python 庫) | 6 | **~1x** | `worked/httpx/` |
+
+> Token 壓縮效果隨語料規模增大而顯著。在 52 個混合檔案規模下，可節省超過 70 倍的 Token 消耗。
+
+---
+
 ## 📝 常見問題
 
 ### Q: 一定要用 API Key 嗎？
@@ -508,6 +540,7 @@ A: 搭配 `--update` 增量模式或 `--watch` 背景同步，僅處理變更檔
 ## 🔗 原始專案
 
 - **原作者**: [Safi Shamsi](https://github.com/safishamsi/graphify)
+- **參考版本**: [v3 繁體/簡體中文 README](https://github.com/safishamsi/graphify/blob/v3/README.zh-CN.md)
 - **PyPI**: `graphifyy` (注意多一個 y)
 
 ---
