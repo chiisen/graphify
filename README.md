@@ -167,8 +167,165 @@ graphify-out/
 | Codex CLI | ✅ 已支援 | `graphify codex install` |
 | Cursor | ✅ 已支援 | `graphify cursor install` |
 | Gemini CLI | ✅ 已支援 | `graphify gemini install` |
-| Qwen | 🚧 規劃中 | （尚未提供 `graphify qwen install`） |
-| Opencode | 🚧 規劃中 | （尚未提供 `graphify opencode install`） |
+| Qwen | ✅ 已支援 | 方案 C：使用 `AGENTS.md`（見下方說明） |
+| Opencode | ✅ 已支援 | `graphify opencode install` |
+
+### Opencode 整合方案
+
+Opencode 與 Codex、Qwen 共用 **方案 C：AGENTS.md 注入**，並額外使用 `.opencode/plugins/graphify.js` 插件實現 bash 鉤子。
+
+**原理**：Opencode 會在啟動時自動讀取專案根目錄的 `AGENTS.md`，將其內容作為專案級別的系統指令。
+
+**設定步驟**：
+
+1. **執行安裝指令**：
+
+```bash
+graphify opencode install
+```
+
+此命令會自動：
+- 寫入 graphify 規則到 `AGENTS.md`
+- 建立 `.opencode/plugins/graphify.js`（tool.execute.before 鉤子）
+- 註冊插件到 `opencode.json`
+
+2. **驗證**：啟動 Opencode 後，詢問架構相關問題（例如：「這個專案的 auth 流程如何運作？」），Opencode 會優先讀取 `graphify-out/GRAPH_REPORT.md` 而非盲目搜尋檔案。
+
+**優勢**：
+- ✅ 一套設定，多平台共用（Codex、OpenCode、Qwen 等均讀取 `AGENTS.md`）
+- ✅ 無需修改 Opencode 本身的設定檔
+- ✅ 專案級別隔離，不同專案可有不同圖譜規則
+- ✅ 額外 bash 鉤子：執行命令時自動提醒圖譜可用
+
+#### ⚠️ Opencode MCP 配置注意
+
+若手動編輯 `~/.opencode/opencode.json` 新增 MCP 伺服器時遇到 `Invalid input mcp.xxx` 錯誤，請檢查環境變數欄位名稱：
+
+- **❌ 錯誤**：使用 `"env": { ... }`
+- **✅ 正確**：使用 **`"environment": { ... }`**
+
+這是因為 Opencode 的 Schema 強制要求使用完整單字 `environment`，若欄位名稱錯誤會導致設定檔驗證失敗。
+
+### Qwen Code 整合方案
+
+Qwen Code 原生支援讀取 `AGENTS.md`，因此 graphify 可透過 **方案 C：AGENTS.md 注入** 與 Qwen 整合，無需額外安裝指令。
+
+#### 方案 C：AGENTS.md 注入（推薦 ✅）
+
+**原理**：Qwen Code 會在啟動時自動讀取專案根目錄的 `AGENTS.md`，將其內容作為專案級別的系統指令。
+
+**設定步驟**：
+
+1. **確保專案根目錄存在 `AGENTS.md`**，並包含以下內容：
+
+```markdown
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- After modifying code files in this session, run `python3 -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"` to keep the graph current
+```
+
+2. **自動安裝**：執行以下指令即可（與 Codex 共用）：
+
+```bash
+graphify codex install
+```
+
+此命令會自動：
+- 寫入上述內容到 `AGENTS.md`
+- 安裝 Codex 專屬的 PreToolUse hook（`.codex/hooks.json`）
+
+3. **驗證**：啟動 Qwen Code 後，詢問架構相關問題（例如：「這個專案的 auth 流程如何運作？」），Qwen 會優先讀取 `graphify-out/GRAPH_REPORT.md` 而非盲目搜尋檔案。
+
+**優勢**：
+- ✅ 一套設定，多平台共用（Codex、Opencode、Qwen 等均使用 `AGENTS.md` 方案）
+- ✅ 無需修改 Qwen Code 本身的設定檔
+- ✅ 專案級別隔離，不同專案可有不同圖譜規則
+
+#### 全域啟用（Opencode 選用）
+
+若希望 **所有專案** 都啟用 graphify 規則（不限單一專案），可在 Opencode 的全域規則檔 `~/.opencode/AGENTS.md` 中加入相同區塊：
+
+```markdown
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- After modifying code files in this session, run `python3 -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"` to keep the graph current
+```
+
+> **注意**：全域啟用後，Opencode 會在「所有專案」中嘗試讀取 `graphify-out/` 目錄。若某個專案沒有圖譜，該規則不會觸發錯誤，但可能產生多餘的檔案檢查。
+
+#### 未來官方支援（規劃中）
+
+若 graphify 套件未來新增 `graphify qwen install` 指令，將會：
+1. 在 `_PLATFORM_CONFIG` 新增 `"qwen"` 条目
+2. 建立 `skill-qwen.md` 檔案（若 Qwen 支援 Skill 工具機制）
+3. 安裝到 `~/.qwen/skills/graphify/SKILL.md` 或寫入專案的 `QWEN.md`
+
+目前使用 `AGENTS.md` 方案已完全滿足日常開發需求。
+
+---
+
+### Opencode 與 Qwen 差異比較
+
+| 平台 | AGENTS.md | 額外插件/鉤子 | 實作細節 |
+|------|-----------|--------------|----------|
+| **Qwen** | ✅ | ❌ 無 | 純靠 `AGENTS.md` 規則 |
+| **Opencode** | ✅ | ✅ `.opencode/plugins/graphify.js` | 修改 bash 命令，注入 `echo` 提示 |
+| **Codex** | ✅ | ✅ `.codex/hooks.json` | PreToolUse hook，返回 `systemMessage` |
+
+#### 鉤子實作機制說明
+
+**Opencode 的 bash 鉤子**：
+```javascript
+// .opencode/plugins/graphify.js
+export const GraphifyPlugin = async ({ directory }) => {
+  return {
+    "tool.execute.before": async (input, output) => {
+      if (input.tool === "bash") {
+        output.args.command =
+          'echo "[graphify] Knowledge graph available..." && ' +
+          output.args.command;
+      }
+    },
+  };
+};
+```
+- **實作方式**：直接修改 bash 命令字串，在前面加上 `echo` 提示
+- **觸發時機**：每次執行 bash 命令前（僅第一次會話）
+- **效果**：終端機會顯示提示訊息，然後執行原始命令
+
+**Codex 的 PreToolUse hook**：
+```json
+// .codex/hooks.json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "echo '{\"systemMessage\":\"graphify: ...\"}'"
+      }]
+    }]
+  }
+}
+```
+- **實作方式**：透過 hook 返回 `systemMessage`，不修改命令本身
+- **觸發時機**：在 bash 工具執行前，作為系統訊息注入
+- **效果**：AI 助手收到系統訊息，終端機不顯示額外輸出
+
+兩者目的相同（提醒 AI 查閱圖譜），但因平台架構不同而採用不同實作方式。
+
+---
+
 ### Claude Code
 
 ```bash
